@@ -8,6 +8,8 @@ import (
 	"github.com/mdhender/ottomat/ent"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/server/middleware"
+	"github.com/mdhender/ottomat/internal/server/templates"
+	"github.com/mdhender/ottomat/internal/version"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -57,8 +59,8 @@ func AdminDashboard(client *ent.Client) http.HandlerFunc {
     <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <div class="container mx-auto p-8">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <div class="flex-grow container mx-auto p-8">
         <div class="bg-gray-800 p-8 rounded-lg shadow-lg mb-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold">Admin Dashboard</h1>
@@ -111,8 +113,9 @@ func AdminDashboard(client *ent.Client) http.HandlerFunc {
             </div>
         </div>
     </div>
+    %s
 </body>
-</html>`, userRows)
+</html>`, userRows, templates.Footer(version.Get()))
 
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprint(w, html)

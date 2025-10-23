@@ -6,6 +6,8 @@ import (
 
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/server/middleware"
+	"github.com/mdhender/ottomat/internal/server/templates"
+	"github.com/mdhender/ottomat/internal/version"
 )
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +37,8 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
     <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <div class="container mx-auto p-8">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <div class="flex-grow container mx-auto p-8">
         <div class="bg-gray-800 p-8 rounded-lg shadow-lg">
             <h1 class="text-3xl font-bold mb-6">Chief Dashboard</h1>
             <div class="mb-6">
@@ -51,8 +53,9 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
             </form>
         </div>
     </div>
+    %s
 </body>
-</html>`, u.Username, clanID)
+</html>`, u.Username, clanID, templates.Footer(version.Get()))
 
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, html)

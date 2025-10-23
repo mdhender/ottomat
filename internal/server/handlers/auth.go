@@ -9,11 +9,13 @@ import (
 	"github.com/mdhender/ottomat/ent/session"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/auth"
+	"github.com/mdhender/ottomat/internal/server/templates"
+	"github.com/mdhender/ottomat/internal/version"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func LoginPage(w http.ResponseWriter, r *http.Request) {
-	html := `<!DOCTYPE html>
+	html := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -23,28 +25,31 @@ func LoginPage(w http.ResponseWriter, r *http.Request) {
     <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-        <h1 class="text-2xl font-bold mb-6 text-center">OttoMat Login</h1>
-        <form hx-post="/login" hx-target="body" hx-swap="outerHTML">
-            <div class="mb-4">
-                <label for="username" class="block text-sm font-medium mb-2">Username</label>
-                <input type="text" id="username" name="username" required
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
-            </div>
-            <div class="mb-6">
-                <label for="password" class="block text-sm font-medium mb-2">Password</label>
-                <input type="password" id="password" name="password" required
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
-            </div>
-            <button type="submit" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">
-                Login
-            </button>
-        </form>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <div class="flex-grow flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center">OttoMat Login</h1>
+            <form hx-post="/login" hx-target="body" hx-swap="outerHTML">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium mb-2">Username</label>
+                    <input type="text" id="username" name="username" required
+                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="password" name="password" required
+                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">
+                    Login
+                </button>
+            </form>
+        </div>
     </div>
+    %s
 </body>
-</html>`
+</html>`, templates.Footer(version.Get()))
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, html)
 }
