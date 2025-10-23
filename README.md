@@ -98,16 +98,28 @@ Create default admin user with username `admin`:
 ./dist/local/ottomat db seed
 ```
 
-### Update Admin Password
+### Update User
 
-Update the admin user's password:
+Update user fields by username. At least one field flag must be provided:
 
 ```bash
-# With specific password
-./dist/local/ottomat db update admin --password newpassword
+# Update password with specific value
+./dist/local/ottomat db update user admin --password newpassword
 
-# Generate random 6-word passphrase (will be logged)
-./dist/local/ottomat db update admin
+# Generate random password
+./dist/local/ottomat db update user admin --password ""
+
+# Update role
+./dist/local/ottomat db update user alice --role chief
+
+# Update clan ID
+./dist/local/ottomat db update user alice --clan-id 42
+
+# Update multiple fields at once
+./dist/local/ottomat db update user bob --password secret123 --role chief --clan-id 99
+
+# Clear clan ID (set to NULL)
+./dist/local/ottomat db update user alice --clan-id 0
 ```
 
 ### Database Options
@@ -118,7 +130,7 @@ All database commands accept a `--db` flag to specify the database file path:
 ./dist/local/ottomat db init --db /path/to/database.db
 ./dist/local/ottomat db migrate --db /path/to/database.db
 ./dist/local/ottomat db seed --db /path/to/database.db
-./dist/local/ottomat db update admin --db /path/to/database.db
+./dist/local/ottomat db update user admin --db /path/to/database.db
 ```
 
 Default: `ottomat.db`

@@ -14,9 +14,12 @@ import (
 )
 
 var (
-	dbPath              string
-	adminPassword       string
-	updateAdminPassword string
+	dbPath         string
+	adminUsername  string
+	adminPassword  string
+	updatePassword string
+	updateRole     string
+	updateClanID   int
 )
 
 var dbCmd = &cobra.Command{
@@ -76,15 +79,20 @@ var dbSeedCmd = &cobra.Command{
 
 		ctx := context.Background()
 
+		username := adminUsername
+		if username == "" {
+			username = "admin"
+		}
+
 		exists, err := client.User.
 			Query().
-			Where(user.Username("admin")).
+			Where(user.Username(username)).
 			Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to check for admin user: %w", err)
 		}
 		if exists {
-			log.Println("admin user already exists")
+			log.Printf("admin user '%s' already exists", username)
 			return nil
 		}
 
@@ -101,7 +109,7 @@ var dbSeedCmd = &cobra.Command{
 
 		_, err = client.User.
 			Create().
-			SetUsername("admin").
+			SetUsername(username).
 			SetPasswordHash(string(passwordHash)).
 			SetRole(user.RoleAdmin).
 			Save(ctx)
@@ -109,7 +117,7 @@ var dbSeedCmd = &cobra.Command{
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
 
-		log.Printf("created default admin user (username: admin, password: %s)", password)
+		log.Printf("created admin user (username: %s, password: %s)", username, password)
 		return nil
 	},
 }
@@ -120,11 +128,23 @@ var dbUpdateCmd = &cobra.Command{
 	Long:  `Update existing database records.`,
 }
 
-var dbUpdateAdminCmd = &cobra.Command{
-	Use:   "admin",
-	Short: "Update admin user password",
-	Long:  `Update the password for the admin user.`,
+var dbUpdateUserCmd = &cobra.Command{
+	Use:   "user <username>",
+	Short: "Update user record",
+	Long:  `Update fields for a specific user. At least one update flag must be provided.`,
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		username := args[0]
+
+		// Check that at least one update flag was provided
+		passwordSet := cmd.Flags().Changed("password")
+		roleSet := cmd.Flags().Changed("role")
+		clanIDSet := cmd.Flags().Changed("clan-id")
+
+		if !passwordSet && !roleSet && !clanIDSet {
+			return fmt.Errorf("at least one update flag must be provided (--password, --role, --clan-id)")
+		}
+
 		client, err := database.Open(dbPath)
 		if err != nil {
 			return err
@@ -133,34 +153,54 @@ var dbUpdateAdminCmd = &cobra.Command{
 
 		ctx := context.Background()
 
-		adminUser, err := client.User.
+		targetUser, err := client.User.
 			Query().
-			Where(user.Username("admin")).
+			Where(user.Username(username)).
 			Only(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to find admin user: %w", err)
+			return fmt.Errorf("failed to find user '%s': %w", username, err)
 		}
 
-		password := updateAdminPassword
-		if password == "" {
-			password = phrases.Generate(6)
-			log.Printf("generated random password: %s", password)
+		update := targetUser.Update()
+		updates := []string{}
+
+		if passwordSet {
+			password := updatePassword
+			if password == "" {
+				password = phrases.Generate(6)
+				log.Printf("generated random password: %s", password)
+			}
+
+			passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			if err != nil {
+				return fmt.Errorf("failed to hash password: %w", err)
+			}
+
+			update.SetPasswordHash(string(passwordHash))
+			updates = append(updates, fmt.Sprintf("password: %s", password))
 		}
 
-		passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if roleSet {
+			update.SetRole(user.Role(updateRole))
+			updates = append(updates, fmt.Sprintf("role: %s", updateRole))
+		}
+
+		if clanIDSet {
+			if updateClanID == 0 {
+				update.ClearClanID()
+				updates = append(updates, "clan_id: cleared")
+			} else {
+				update.SetClanID(updateClanID)
+				updates = append(updates, fmt.Sprintf("clan_id: %d", updateClanID))
+			}
+		}
+
+		_, err = update.Save(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to hash password: %w", err)
+			return fmt.Errorf("failed to update user: %w", err)
 		}
 
-		_, err = adminUser.
-			Update().
-			SetPasswordHash(string(passwordHash)).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to update admin password: %w", err)
-		}
-
-		log.Printf("updated admin password to: %s", password)
+		log.Printf("updated user '%s': %v", username, updates)
 		return nil
 	},
 }
@@ -171,9 +211,12 @@ func init() {
 	dbCmd.AddCommand(dbMigrateCmd)
 	dbCmd.AddCommand(dbSeedCmd)
 	dbCmd.AddCommand(dbUpdateCmd)
-	dbUpdateCmd.AddCommand(dbUpdateAdminCmd)
+	dbUpdateCmd.AddCommand(dbUpdateUserCmd)
 
 	dbCmd.PersistentFlags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
+	dbSeedCmd.Flags().StringVar(&adminUsername, "username", "admin", "username for admin user")
 	dbSeedCmd.Flags().StringVar(&adminPassword, "password", "", "password for admin user (generates random if not provided)")
-	dbUpdateAdminCmd.Flags().StringVar(&updateAdminPassword, "password", "", "new password for admin user (generates random if not provided)")
+	dbUpdateUserCmd.Flags().StringVar(&updatePassword, "password", "", "new password for user (generates random if not provided)")
+	dbUpdateUserCmd.Flags().StringVar(&updateRole, "role", "", "new role for user (guest, chief, admin)")
+	dbUpdateUserCmd.Flags().IntVar(&updateClanID, "clan-id", 0, "new clan ID for user (0 to clear)")
 }
