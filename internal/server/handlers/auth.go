@@ -14,21 +14,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func LoginPage(devMode bool) http.HandlerFunc {
+func LoginPage(visiblePasswords bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var autocompleteForm, autocompleteUsername, autocompletePassword, dummyFields string
-		
-		if devMode {
-			// Aggressive anti-autofill for development
-			autocompleteForm = `autocomplete="off"`
-			autocompleteUsername = `autocomplete="off" data-1p-ignore data-lpignore="true"`
-			autocompletePassword = `autocomplete="new-password" data-1p-ignore data-lpignore="true"`
-			// Hidden dummy fields to confuse password managers
-			dummyFields = `
-				<input type="text" name="fake_username" style="position:absolute;top:-9999px;left:-9999px" tabindex="-1" autocomplete="off">
-				<input type="password" name="fake_password" style="position:absolute;top:-9999px;left:-9999px" tabindex="-1" autocomplete="new-password">`
-		} else {
-			autocompletePassword = `autocomplete="current-password"`
+		passwordType := "password"
+		if visiblePasswords {
+			passwordType = "text"
 		}
 
 		html := fmt.Sprintf(`<!DOCTYPE html>
@@ -45,16 +35,15 @@ func LoginPage(devMode bool) http.HandlerFunc {
     <div class="flex-grow flex items-center justify-center">
         <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
             <h1 class="text-2xl font-bold mb-6 text-center">OttoMat Login</h1>
-            <form hx-post="/login" hx-target="body" hx-swap="outerHTML" %s>
-                %s
+            <form hx-post="/login" hx-target="body" hx-swap="outerHTML">
                 <div class="mb-4">
                     <label for="username" class="block text-sm font-medium mb-2">Username</label>
-                    <input type="text" id="username" name="username" required %s
+                    <input type="text" id="username" name="username" required
                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
                 </div>
                 <div class="mb-6">
                     <label for="password" class="block text-sm font-medium mb-2">Password</label>
-                    <input type="password" id="password" name="password" required %s
+                    <input type="%s" id="password" name="password" required autocomplete="current-password"
                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
                 </div>
                 <button type="submit" 
@@ -66,7 +55,7 @@ func LoginPage(devMode bool) http.HandlerFunc {
     </div>
     %s
 </body>
-</html>`, autocompleteForm, dummyFields, autocompleteUsername, autocompletePassword, templates.Footer(ottomat.Version().String()))
+</html>`, passwordType, templates.Footer(ottomat.Version().String()))
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprint(w, html)
 	}

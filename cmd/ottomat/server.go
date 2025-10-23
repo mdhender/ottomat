@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	serverPort    string
-	serverTimeout time.Duration
-	devMode       bool
+	serverPort        string
+	serverTimeout     time.Duration
+	devMode           bool
+	visiblePasswords  bool
 )
 
 var serverCmd = &cobra.Command{
@@ -26,13 +27,17 @@ var serverCmd = &cobra.Command{
 	Short: "Start the web server",
 	Long:  `Start the OttoMat web server with graceful shutdown support.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if visiblePasswords && !devMode {
+			return fmt.Errorf("--visible-passwords requires --dev flag")
+		}
+
 		client, err := database.Open(dbPath)
 		if err != nil {
 			return err
 		}
 		defer client.Close()
 
-		srv := server.New(client, devMode)
+		srv := server.New(client, devMode, visiblePasswords)
 		httpServer := &http.Server{
 			Addr:    ":" + serverPort,
 			Handler: srv,
@@ -81,5 +86,6 @@ func init() {
 	serverCmd.Flags().StringVar(&serverPort, "port", "8080", "port to listen on")
 	serverCmd.Flags().DurationVar(&serverTimeout, "timeout", 0, "automatically shutdown after duration (for testing)")
 	serverCmd.Flags().BoolVar(&devMode, "dev", false, "enable development mode (disables password managers)")
+	serverCmd.Flags().BoolVar(&visiblePasswords, "visible-passwords", false, "show passwords as plain text (requires --dev)")
 	serverCmd.Flags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
 }

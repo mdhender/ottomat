@@ -8,13 +8,13 @@ import (
 	"github.com/mdhender/ottomat/internal/server/middleware"
 )
 
-func New(client *ent.Client, devMode bool) http.Handler {
+func New(client *ent.Client, devMode bool, visiblePasswords bool) http.Handler {
 	mux := http.NewServeMux()
 
 	sessionMW := middleware.Session(client)
 	authMW := middleware.Auth()
 
-	mux.HandleFunc("GET /login", handlers.LoginPage(devMode))
+	mux.HandleFunc("GET /login", handlers.LoginPage(visiblePasswords))
 	mux.HandleFunc("POST /login", handlers.Login(client))
 	mux.HandleFunc("POST /logout", handlers.Logout(client))
 
