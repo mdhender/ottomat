@@ -173,7 +173,12 @@ Server will start on port 8080 by default. Access at http://localhost:8080
 ./dist/local/ottomat server --dev                    # Development mode (disables password managers)
 ```
 
-**Development Mode**: When `--dev` is enabled, the login form includes attributes that prevent password managers (1Password, LastPass, Chrome) from interfering with the form fields. This is useful for local testing but should not be used in production.
+**Development Mode**: When `--dev` is enabled:
+- Login form includes attributes that prevent password managers (1Password, LastPass, Chrome) from interfering with form fields
+- HTTP request logging is enabled, showing method, path, status code, and response time
+- Example: `2025/10/23 16:12:26 [GET] /login 200 107.167µs`
+
+This is useful for local testing but should not be used in production.
 
 ## User Roles
 

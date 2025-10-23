@@ -23,5 +23,11 @@ func New(client *ent.Client, devMode bool) http.Handler {
 	mux.Handle("POST /admin/users", sessionMW(authMW(http.HandlerFunc(handlers.CreateUser(client)))))
 	mux.Handle("DELETE /admin/users/{id}", sessionMW(authMW(http.HandlerFunc(handlers.DeleteUser(client)))))
 
-	return mux
+	// Wrap with logging middleware if in development mode
+	var handler http.Handler = mux
+	if devMode {
+		handler = middleware.Logging()(handler)
+	}
+
+	return handler
 }
