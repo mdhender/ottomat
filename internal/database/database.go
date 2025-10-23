@@ -18,10 +18,10 @@ func Open(dbPath string) (*ent.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed opening database: %w", err)
 	}
-	
+
 	// Configure connection pool for SQLite
 	db.SetMaxOpenConns(1)
-	
+
 	drv := entsql.OpenDB(dialect.SQLite, db)
 	client := ent.NewClient(ent.Driver(drv))
 	return client, nil

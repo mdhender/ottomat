@@ -18,6 +18,7 @@ import (
 var (
 	serverPort    string
 	serverTimeout time.Duration
+	devMode       bool
 )
 
 var serverCmd = &cobra.Command{
@@ -31,7 +32,7 @@ var serverCmd = &cobra.Command{
 		}
 		defer client.Close()
 
-		srv := server.New(client)
+		srv := server.New(client, devMode)
 		httpServer := &http.Server{
 			Addr:    ":" + serverPort,
 			Handler: srv,
@@ -79,5 +80,6 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().StringVar(&serverPort, "port", "8080", "port to listen on")
 	serverCmd.Flags().DurationVar(&serverTimeout, "timeout", 0, "automatically shutdown after duration (for testing)")
+	serverCmd.Flags().BoolVar(&devMode, "dev", false, "enable development mode (disables password managers)")
 	serverCmd.Flags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
 }

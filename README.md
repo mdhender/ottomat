@@ -170,7 +170,10 @@ Server will start on port 8080 by default. Access at http://localhost:8080
 ./dist/local/ottomat server --port 3000              # Custom port
 ./dist/local/ottomat server --db custom.db           # Custom database
 ./dist/local/ottomat server --timeout 5m             # Auto-shutdown after 5 minutes (testing)
+./dist/local/ottomat server --dev                    # Development mode (disables password managers)
 ```
+
+**Development Mode**: When `--dev` is enabled, the login form includes attributes that prevent password managers (1Password, LastPass, Chrome) from interfering with the form fields. This is useful for local testing but should not be used in production.
 
 ## User Roles
 
