@@ -13,11 +13,15 @@ import (
 )
 
 func Open(dbPath string) (*ent.Client, error) {
-	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)", dbPath)
+	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(1000)", dbPath)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed opening database: %w", err)
 	}
+	
+	// Configure connection pool for SQLite
+	db.SetMaxOpenConns(1)
+	
 	drv := entsql.OpenDB(dialect.SQLite, db)
 	client := ent.NewClient(ent.Driver(drv))
 	return client, nil
