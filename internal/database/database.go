@@ -2,19 +2,24 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/mdhender/ottomat/ent"
 	_ "modernc.org/sqlite"
 )
 
 func Open(dbPath string) (*ent.Client, error) {
-	dsn := fmt.Sprintf("file:%s?cache=shared&_fk=1", dbPath)
-	client, err := ent.Open("sqlite", dsn)
+	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)", dbPath)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("failed opening connection to sqlite: %w", err)
+		return nil, fmt.Errorf("failed opening database: %w", err)
 	}
+	drv := entsql.OpenDB(dialect.SQLite, db)
+	client := ent.NewClient(ent.Driver(drv))
 	return client, nil
 }
 
