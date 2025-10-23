@@ -17,6 +17,9 @@ var (
 	dbPath         string
 	adminUsername  string
 	adminPassword  string
+	createPassword string
+	createRole     string
+	createClanID   int
 	updatePassword string
 	updateRole     string
 	updateClanID   int
@@ -122,6 +125,81 @@ var dbSeedCmd = &cobra.Command{
 	},
 }
 
+var dbCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create database records",
+	Long:  `Create new database records.`,
+}
+
+var dbCreateUserCmd = &cobra.Command{
+	Use:   "user <username>",
+	Short: "Create a new user",
+	Long:  `Create a new user with specified username and optional password, role, and clan ID.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		username := args[0]
+
+		client, err := database.Open(dbPath)
+		if err != nil {
+			return err
+		}
+		defer client.Close()
+
+		ctx := context.Background()
+
+		// Check if user already exists
+		exists, err := client.User.
+			Query().
+			Where(user.Username(username)).
+			Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check for existing user: %w", err)
+		}
+		if exists {
+			return fmt.Errorf("user '%s' already exists", username)
+		}
+
+		password := createPassword
+		if password == "" {
+			password = phrases.Generate(6)
+			log.Printf("generated random password: %s", password)
+		}
+
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		role := createRole
+		if role == "" {
+			role = "guest"
+		}
+
+		create := client.User.
+			Create().
+			SetUsername(username).
+			SetPasswordHash(string(passwordHash)).
+			SetRole(user.Role(role))
+
+		if createClanID != 0 {
+			create.SetClanID(createClanID)
+		}
+
+		newUser, err := create.Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+
+		clanInfo := "none"
+		if newUser.ClanID != nil {
+			clanInfo = fmt.Sprintf("%d", *newUser.ClanID)
+		}
+
+		log.Printf("created user '%s' (role: %s, clan: %s, password: %s)", username, role, clanInfo, password)
+		return nil
+	},
+}
+
 var dbUpdateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update database records",
@@ -210,12 +288,17 @@ func init() {
 	dbCmd.AddCommand(dbInitCmd)
 	dbCmd.AddCommand(dbMigrateCmd)
 	dbCmd.AddCommand(dbSeedCmd)
+	dbCmd.AddCommand(dbCreateCmd)
 	dbCmd.AddCommand(dbUpdateCmd)
+	dbCreateCmd.AddCommand(dbCreateUserCmd)
 	dbUpdateCmd.AddCommand(dbUpdateUserCmd)
 
 	dbCmd.PersistentFlags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
 	dbSeedCmd.Flags().StringVar(&adminUsername, "username", "admin", "username for admin user")
 	dbSeedCmd.Flags().StringVar(&adminPassword, "password", "", "password for admin user (generates random if not provided)")
+	dbCreateUserCmd.Flags().StringVar(&createPassword, "password", "", "password for user (generates random if not provided)")
+	dbCreateUserCmd.Flags().StringVar(&createRole, "role", "guest", "role for user (guest, chief, admin)")
+	dbCreateUserCmd.Flags().IntVar(&createClanID, "clan-id", 0, "clan ID for user")
 	dbUpdateUserCmd.Flags().StringVar(&updatePassword, "password", "", "new password for user (generates random if not provided)")
 	dbUpdateUserCmd.Flags().StringVar(&updateRole, "role", "", "new role for user (guest, chief, admin)")
 	dbUpdateUserCmd.Flags().IntVar(&updateClanID, "clan-id", 0, "new clan ID for user (0 to clear)")

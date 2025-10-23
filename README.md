@@ -98,6 +98,24 @@ Create default admin user with username `admin`:
 ./dist/local/ottomat db seed
 ```
 
+### Create User
+
+Create a new user with a username and optional password, role, and clan ID:
+
+```bash
+# Create user with auto-generated password (role defaults to 'guest')
+./dist/local/ottomat db create user alice
+
+# Create user with specific password
+./dist/local/ottomat db create user bob --password secret123
+
+# Create chief with clan ID
+./dist/local/ottomat db create user charlie --role chief --clan-id 42
+
+# Create admin user
+./dist/local/ottomat db create user boss --role admin --password adminpass
+```
+
 ### Update User
 
 Update user fields by username. At least one field flag must be provided:
@@ -130,6 +148,7 @@ All database commands accept a `--db` flag to specify the database file path:
 ./dist/local/ottomat db init --db /path/to/database.db
 ./dist/local/ottomat db migrate --db /path/to/database.db
 ./dist/local/ottomat db seed --db /path/to/database.db
+./dist/local/ottomat db create user alice --db /path/to/database.db
 ./dist/local/ottomat db update user admin --db /path/to/database.db
 ```
 
