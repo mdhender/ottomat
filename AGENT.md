@@ -11,7 +11,7 @@ We are going to create the OttoMap web server.
 
 ## Commands
 * CLI command:
-  * Build CLI: `go build -o dist/local/ottomat .`
+  * Build CLI: `go build -o dist/local/ottomat ./cmd/ottomat`
   * Version info: `dist/local/ottomat version`
   * Tests: `go test ./...`
   * Format code: `go fmt ./...`

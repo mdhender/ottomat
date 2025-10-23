@@ -3,18 +3,13 @@ package main
 import (
 	"fmt"
 
-	"github.com/maloquacious/semver"
+	"github.com/mdhender/ottomat"
 	"github.com/spf13/cobra"
 )
 
 var (
 	buildInfo bool = false
-	version        = semver.Version{Major: 0, Minor: 2, Patch: 4, PreRelease: "alpha", Build: semver.Commit()}
 )
-
-func Version() semver.Version {
-	return version
-}
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -22,9 +17,9 @@ var versionCmd = &cobra.Command{
 	Long:  `Display the current version of OttoMat.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if buildInfo {
-			fmt.Println(Version().String())
+			fmt.Println(ottomat.Version().String())
 		} else {
-			fmt.Println(Version().Core())
+			fmt.Println(ottomat.Version().Core())
 		}
 	},
 }
