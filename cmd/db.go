@@ -8,11 +8,16 @@ import (
 
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/database"
+	"github.com/mdhender/phrases/v2"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var dbPath string
+var (
+	dbPath              string
+	adminPassword       string
+	updateAdminPassword string
+)
 
 var dbCmd = &cobra.Command{
 	Use:   "db",
@@ -83,7 +88,13 @@ var dbSeedCmd = &cobra.Command{
 			return nil
 		}
 
-		passwordHash, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+		password := adminPassword
+		if password == "" {
+			password = phrases.Generate(6)
+			log.Printf("generated random password: %s", password)
+		}
+
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
@@ -98,7 +109,58 @@ var dbSeedCmd = &cobra.Command{
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
 
-		log.Println("created default admin user (username: admin, password: admin)")
+		log.Printf("created default admin user (username: admin, password: %s)", password)
+		return nil
+	},
+}
+
+var dbUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update database records",
+	Long:  `Update existing database records.`,
+}
+
+var dbUpdateAdminCmd = &cobra.Command{
+	Use:   "admin",
+	Short: "Update admin user password",
+	Long:  `Update the password for the admin user.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := database.Open(dbPath)
+		if err != nil {
+			return err
+		}
+		defer client.Close()
+
+		ctx := context.Background()
+
+		adminUser, err := client.User.
+			Query().
+			Where(user.Username("admin")).
+			Only(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to find admin user: %w", err)
+		}
+
+		password := updateAdminPassword
+		if password == "" {
+			password = phrases.Generate(6)
+			log.Printf("generated random password: %s", password)
+		}
+
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		_, err = adminUser.
+			Update().
+			SetPasswordHash(string(passwordHash)).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update admin password: %w", err)
+		}
+
+		log.Printf("updated admin password to: %s", password)
 		return nil
 	},
 }
@@ -108,6 +170,10 @@ func init() {
 	dbCmd.AddCommand(dbInitCmd)
 	dbCmd.AddCommand(dbMigrateCmd)
 	dbCmd.AddCommand(dbSeedCmd)
+	dbCmd.AddCommand(dbUpdateCmd)
+	dbUpdateCmd.AddCommand(dbUpdateAdminCmd)
 
 	dbCmd.PersistentFlags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
+	dbSeedCmd.Flags().StringVar(&adminPassword, "password", "", "password for admin user (generates random if not provided)")
+	dbUpdateAdminCmd.Flags().StringVar(&updateAdminPassword, "password", "", "new password for admin user (generates random if not provided)")
 }

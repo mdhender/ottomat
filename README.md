@@ -59,10 +59,26 @@ Apply schema migrations:
 
 ### Seed Database
 
-Create default admin user (username: `admin`, password: `admin`):
+Create default admin user with username `admin`:
 
 ```bash
+# With specific password
+./dist/local/ottomat db seed --password mypassword
+
+# Generate random 6-word passphrase (will be logged)
 ./dist/local/ottomat db seed
+```
+
+### Update Admin Password
+
+Update the admin user's password:
+
+```bash
+# With specific password
+./dist/local/ottomat db update admin --password newpassword
+
+# Generate random 6-word passphrase (will be logged)
+./dist/local/ottomat db update admin
 ```
 
 ### Database Options
@@ -73,6 +89,7 @@ All database commands accept a `--db` flag to specify the database file path:
 ./dist/local/ottomat db init --db /path/to/database.db
 ./dist/local/ottomat db migrate --db /path/to/database.db
 ./dist/local/ottomat db seed --db /path/to/database.db
+./dist/local/ottomat db update admin --db /path/to/database.db
 ```
 
 Default: `ottomat.db`

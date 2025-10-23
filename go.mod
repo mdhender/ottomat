@@ -5,6 +5,7 @@ go 1.25.2
 require (
 	entgo.io/ent v0.14.5
 	github.com/maloquacious/semver v0.4.0
+	github.com/mdhender/phrases/v2 v2.0.0
 	github.com/spf13/cobra v1.10.1
 	golang.org/x/crypto v0.43.0
 	modernc.org/sqlite v1.39.1
