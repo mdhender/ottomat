@@ -28,16 +28,45 @@ A minimal web server built with Go backend and HTMX frontend, featuring session 
 
 ### Build
 
+Using Make:
+
 ```bash
-go build -o dist/local/ottomat .
+make build
+```
+
+Or manually:
+
+```bash
+go build -o dist/local/ottomat ./cmd/ottomat
 ```
 
 For Linux:
 
 ```bash
 VERSION=$(./dist/local/ottomat version)
-GOOS=linux GOARCH=amd64 go build -o dist/linux/ottomat-${VERSION} .
+GOOS=linux GOARCH=amd64 go build -o dist/linux/ottomat-${VERSION} ./cmd/ottomat
 ```
+
+### Quick Start with Test Database
+
+To quickly set up a test database with a default admin user:
+
+```bash
+make new-database
+```
+
+This will:
+1. Build the binary
+2. Remove any existing test database
+3. Create and migrate a new database at `testdata/ottomat.db`
+4. Seed with admin user (username: `admin`, password: `happy.cat.happy.nap`)
+
+### Makefile Targets
+
+- `make help` - Show all available targets
+- `make build` - Build the ottomat binary
+- `make new-database` - Initialize a fresh test database with default admin
+- `make clean` - Remove build artifacts and test database
 
 ## Database Setup
 
@@ -209,11 +238,17 @@ go fmt ./...
 go test ./...
 
 # Build
-go build -o dist/local/ottomat .
+make build
 
 # Version info
 ./dist/local/ottomat version
 ./dist/local/ottomat version --build-info
+
+# Quick test database setup
+make new-database
+
+# Clean build artifacts
+make clean
 ```
 
 ## Security Features
