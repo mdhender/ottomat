@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/mdhender/ottomat"
 	"github.com/mdhender/ottomat/ent"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/server/middleware"
 	"github.com/mdhender/ottomat/internal/server/templates"
-	"github.com/mdhender/ottomat/internal/version"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -115,7 +115,7 @@ func AdminDashboard(client *ent.Client) http.HandlerFunc {
     </div>
     %s
 </body>
-</html>`, userRows, templates.Footer(version.Get()))
+</html>`, userRows, templates.Footer(ottomat.Version().String()))
 
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprint(w, html)

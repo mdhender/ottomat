@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mdhender/ottomat"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/server/middleware"
 	"github.com/mdhender/ottomat/internal/server/templates"
-	"github.com/mdhender/ottomat/internal/version"
 )
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +55,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
     </div>
     %s
 </body>
-</html>`, u.Username, clanID, templates.Footer(version.Get()))
+</html>`, u.Username, clanID, templates.Footer(ottomat.Version().String()))
 
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, html)

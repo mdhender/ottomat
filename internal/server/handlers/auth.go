@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mdhender/ottomat"
 	"github.com/mdhender/ottomat/ent"
 	"github.com/mdhender/ottomat/ent/session"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/auth"
 	"github.com/mdhender/ottomat/internal/server/templates"
-	"github.com/mdhender/ottomat/internal/version"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,7 +49,7 @@ func LoginPage(w http.ResponseWriter, r *http.Request) {
     </div>
     %s
 </body>
-</html>`, templates.Footer(version.Get()))
+</html>`, templates.Footer(ottomat.Version().String()))
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, html)
 }
