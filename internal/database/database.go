@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -13,6 +14,10 @@ import (
 )
 
 func Open(dbPath string) (*ent.Client, error) {
+	// hack to prevent Sqlite from creating files when dbPath does not exist
+	if _, err := os.Stat(dbPath); err != nil {
+		return nil, fmt.Errorf("database does not exist at %s", dbPath)
+	}
 	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(1000)", dbPath)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {

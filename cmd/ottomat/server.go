@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	serverPort        string
-	serverTimeout     time.Duration
-	devMode           bool
-	visiblePasswords  bool
+	serverPort       string
+	serverTimeout    time.Duration
+	devMode          bool
+	visiblePasswords bool
 )
 
 var serverCmd = &cobra.Command{
@@ -27,6 +27,17 @@ var serverCmd = &cobra.Command{
 	Short: "Start the web server",
 	Long:  `Start the OttoMat web server with graceful shutdown support.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// development testing hack
+		if devMode && dbPath == "./ottomat.db" {
+			log.Printf("warning: dev dbPath check %q\n", dbPath)
+			if _, err := os.Stat(dbPath); err != nil {
+				log.Printf("warning: dev dbPath not exists %q\n", dbPath)
+				if _, err := os.Stat("./testdata/ottomat.db"); err == nil {
+					dbPath = "./testdata/ottomat.db"
+					log.Printf("warning: overriding dbPath to %q\n", dbPath)
+				}
+			}
+		}
 		if visiblePasswords && !devMode {
 			return fmt.Errorf("--visible-passwords requires --dev flag")
 		}
@@ -87,5 +98,5 @@ func init() {
 	serverCmd.Flags().DurationVar(&serverTimeout, "timeout", 0, "automatically shutdown after duration (for testing)")
 	serverCmd.Flags().BoolVar(&devMode, "dev", false, "enable development mode (disables password managers)")
 	serverCmd.Flags().BoolVar(&visiblePasswords, "visible-passwords", false, "show passwords as plain text (requires --dev)")
-	serverCmd.Flags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
+	serverCmd.Flags().StringVar(&dbPath, "db", "./ottomat.db", "path to the database file")
 }

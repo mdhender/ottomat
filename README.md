@@ -177,6 +177,8 @@ Server will start on port 8080 by default. Access at http://localhost:8080
 - HTTP request logging is enabled, showing method, path, status code, and response time
 - Example: `2025/10/23 16:12:26 [GET] /login 200 107.167µs`
 
+When `--dev` is enabled, the login form includes attributes that prevent password managers (1Password, LastPass, Chrome) from interfering with the form fields. This is useful for local testing but should not be used in production.
+
 **Visible Passwords**: Use `--visible-passwords` with `--dev` to show passwords as plain text:
 ```bash
 ./dist/local/ottomat server --dev --visible-passwords
