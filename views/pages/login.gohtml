@@ -1,3 +1,5 @@
+{{define "title" -}}Login{{- end}}
+
 {{define "content"}}
     <div class="flex-grow flex items-center justify-center">
         <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
@@ -21,3 +23,7 @@
         </div>
     </div>
 {{end}}
+
+{{define "pages/login" -}}
+{{template "layouts/ottomat" .}}
+{{- end}}

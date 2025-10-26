@@ -7,10 +7,9 @@ This example demonstrates a minimal **HTMX + Go** setup with:
    - `GetViewsFS(FSConfig)` returns an `fs.FS` rooted at `views/`.
    - Both support **Live** (disk) and **Embedded** (embed.FS) modes.
 
-2. A pluggable **template renderer** in `internal/tpl` with a clean interface:
-   - `NonCachingRenderer` (development): reparses templates on every request for fast feedback.
-   - `CachingRenderer` (production): caches parsed templates; `Preload()` parses *all* entries and returns the first error (fail fast).
-   - `Preload()` in dev logs parse errors but never fails, so you can work through template errors.
+2. A pluggable **template loader** in `internal/tpl` with a clean interface:
+   - `NonCachingLoader` (development): reparses templates on every request for fast feedback.
+   - `CachingLoader` (production): caches parsed templates; parses *all* entries and returns all errors (fail fast).
 
 3. **HTMX fragment vs full page** responses:
    - `/users` renders a full page on normal requests and returns only a `<tbody>` row fragment on HTMX requests.
@@ -45,17 +44,14 @@ go run ./cmd/views
 │   ├── partials/flash.gohtml
 │   ├── pages/users/index.gohtml       # full page (uses base)
 │   └── frags/users/table_rows.gohtml  # fragment for HTMX swaps
-└── internal/tpl/
-    ├── renderer.go                    # Renderer interface + Config
-    ├── noncaching.go                  # non-caching implementation
-    ├── caching.go                     # caching implementation
-    └── parse.go                       # shared parser helper
+└── internal/views/
+    └── loaders.go                     # implementation
 ```
 
 ---
 
 ## Notes
 
-- The renderer is intentionally **agnostic** of where files live; it only sees an `fs.FS`. That keeps tests easy and lets you swap backends without changing handlers.
+- The loader is intentionally **agnostic** of where files live; it only sees an `fs.FS`. That keeps tests easy and lets you swap backends without changing handlers.
 - The example uses `.gohtml` extensions and short globs because the `views` FS is already rooted at `views/`.
 - If you already have existing static pages under `public/`, you can convert them gradually by adding `.gohtml` versions under `views/` and routing to them.

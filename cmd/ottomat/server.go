@@ -22,7 +22,7 @@ var (
 	visiblePasswords bool
 )
 
-var serverCmd = &cobra.Command{
+var cmdServer = &cobra.Command{
 	Use:   "server",
 	Short: "Start the web server",
 	Long:  `Start the OttoMat web server with graceful shutdown support.`,
@@ -38,6 +38,7 @@ var serverCmd = &cobra.Command{
 				}
 			}
 		}
+		avoidAutofill := devMode
 		if visiblePasswords && !devMode {
 			return fmt.Errorf("--visible-passwords requires --dev flag")
 		}
@@ -55,7 +56,7 @@ var serverCmd = &cobra.Command{
 		assetsFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: fsMode})
 		viewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: fsMode})
 
-		srv := server.New(":"+serverPort, client, devMode, visiblePasswords, assetsFS, viewsFS)
+		srv := server.New(":"+serverPort, client, devMode, avoidAutofill, visiblePasswords, assetsFS, viewsFS)
 
 		serverErrors := make(chan error, 1)
 		go func() {
@@ -93,13 +94,4 @@ var serverCmd = &cobra.Command{
 
 		return nil
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(serverCmd)
-	serverCmd.Flags().StringVar(&serverPort, "port", "8080", "port to listen on")
-	serverCmd.Flags().DurationVar(&serverTimeout, "timeout", 0, "automatically shutdown after duration (for testing)")
-	serverCmd.Flags().BoolVar(&devMode, "dev", false, "enable development mode (disables password managers)")
-	serverCmd.Flags().BoolVar(&visiblePasswords, "visible-passwords", false, "show passwords as plain text (requires --dev)")
-	serverCmd.Flags().StringVar(&dbPath, "db", "./ottomat.db", "path to the database file")
 }

@@ -14,7 +14,7 @@ import (
 	"syscall"
 
 	"github.com/mdhender/ottomat"
-	tpl "github.com/mdhender/ottomat/internal/views"
+	"github.com/mdhender/ottomat/internal/views"
 )
 
 type User struct {
@@ -34,23 +34,14 @@ func main() {
 	//log.Println("[views] dev mode: NonCaching HTMX server (reparse each request)")
 	nonCachingPublicFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: ottomat.Live})
 	nonCachingViewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Live})
-	nonCachingRenderer := tpl.NewNonCaching(nonCachingViewsFS, funcs())
-	err := nonCachingRenderer.Preload()
-	if err != nil {
-		log.Fatalf("nonCachingServer: %v\n", err)
-	}
-	nonCachingLoader, errs := tpl.NewNonCachingLoader(nonCachingViewsFS, funcs())
+	nonCachingLoader, errs := views.NewNonCachingLoader(nonCachingViewsFS, funcs())
 	if errs != nil {
 		for _, err := range errs {
 			log.Printf("nonCachingLoader: %v\n", err)
 		}
 		log.Fatalf("nonCachingLoader: failed\n")
-	} else if buf, err := nonCachingLoader.Execute("pages/users/index", nil); err != nil {
-		log.Fatalf("nonCachingLoader: %v\n", err)
-	} else {
-		log.Printf("nonCachingLoader: %q\n", buf.Bytes())
 	}
-	nonCachingServer, err := newServerWithLoader(":8080", nonCachingPublicFS, nonCachingLoader)
+	nonCachingServer, err := newServer(":8080", nonCachingPublicFS, nonCachingLoader)
 	if err != nil {
 		log.Fatalf("nonCachingServer: %v\n", err)
 	}
@@ -58,14 +49,14 @@ func main() {
 	//log.Println("[views] prod mode: Caching HTMX server (cache views)")
 	cachingPublicFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: ottomat.Embedded})
 	cachingViewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Embedded})
-	cachingLoader, errs := tpl.NewCachingLoader(cachingViewsFS, funcs())
+	cachingLoader, errs := views.NewCachingLoader(cachingViewsFS, funcs())
 	if errs != nil {
 		for _, err := range errs {
 			log.Printf("cachingLoader: %v\n", err)
 		}
 		log.Fatalf("cachingLoader: failed\n")
 	}
-	cachingServer, err := newServerWithLoader(":8181", cachingPublicFS, cachingLoader)
+	cachingServer, err := newServer(":8181", cachingPublicFS, cachingLoader)
 	if err != nil {
 		log.Fatalf("cachingServer: %v\n", err)
 	}
@@ -109,34 +100,7 @@ type server struct {
 	http.Server
 }
 
-func newServer(addr string, pubFS fs.FS, render tpl.Renderer) (*server, error) {
-	s := &server{}
-	s.Addr = addr
-
-	mux := http.NewServeMux()
-
-	// static server
-	mux.Handle("GET /", http.FileServer(http.FS(pubFS)))
-
-	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query().Get("q")
-		data := PageData{Q: q, Users: filterUsers(sampleUsers(), q), Version: ottomat.Version().String()}
-
-		renderer, entry := render.Page, "users/index"
-		if r.Header.Get("HX-Request") == "true" {
-			renderer, entry = render.Frag, "users/table_rows"
-		}
-		if err := renderer(w, entry, data); err != nil {
-			handleErr(w, err)
-		}
-	})
-
-	s.Handler = mux
-
-	return s, nil
-}
-
-func newServerWithLoader(addr string, pubFS fs.FS, loader tpl.Loader) (*server, error) {
+func newServer(addr string, pubFS fs.FS, loader views.Loader) (*server, error) {
 	s := &server{}
 	s.Addr = addr
 

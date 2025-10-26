@@ -18,6 +18,10 @@ build: ## Build the ottomat binary
 new-database: build ## Initialize a new test database with default admin
 	@./tools/init-new-database.sh $(DB_PATH) $(ADMIN_PASSWORD)
 
+serve: ## run a development server
+	@echo "Running ottomat server in development mode..."
+	@go run ./cmd/ottomat server --dev --visible-passwords --db testdata/ottomat.db
+
 clean: ## Remove build artifacts and test database
 	@echo "Cleaning up..."
 	@rm -f $(BINARY)

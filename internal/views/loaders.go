@@ -13,27 +13,6 @@ import (
 	"strings"
 )
 
-// Loader is a template loader.
-//
-// Example
-//
-//	if t, err := l.Load(name); err != nil {
-//		return err
-//	} else if err = t.ExecuteTemplate(w, name, data); err != nil {
-//		return err
-//	}
-//
-// Loaders assume that the name of each template is the same as the file name
-// minus the ".gohtml" extension. Odd things may happen if multiple templates
-// define the same name.
-type Loader interface {
-	// Load returns a template.
-	Load(name string) (*template.Template, error)
-
-	// Execute is a helper to load and execute a template.
-	Execute(name string, data any) (*bytes.Buffer, error)
-}
-
 // CachingLoader can be created with either an embedded or "live" file system.
 // Either way, it will scan the file system for the list of Go template files to load.
 type CachingLoader struct {
@@ -58,13 +37,9 @@ type cachedTemplate struct {
 // views that we expect you to load directly.
 func NewCachingLoader(fsys fs.FS, funcs template.FuncMap) (Loader, []error) {
 	// find all the Go template files on the file system
-	layouts, partials, pages, fragments, err := findGoHtmlTemplates(fsys)
+	files, err := findTemplates(fsys)
 	if err != nil {
 		return nil, []error{err}
-	}
-	var files []string
-	for _, list := range [][]string{layouts, partials, pages, fragments} {
-		files = append(files, list...)
 	}
 
 	l := &CachingLoader{
@@ -79,7 +54,10 @@ func NewCachingLoader(fsys fs.FS, funcs template.FuncMap) (Loader, []error) {
 			continue
 		}
 		name := strings.TrimSuffix(fileName, ".gohtml")
-		t, err := parseAll(fsys, funcs, name, files...)
+		// we must put the template file last in the list of files to load so that it overrides
+		// any other templates that share the same "define xxxxx" entries (eg, "content").
+		fileList := append(files, fileName)
+		t, err := template.New(name).Funcs(funcs).ParseFS(fsys, fileList...)
 		if err != nil {
 			log.Printf("views: preload %q: parse %q: %v", fileName, name, err)
 			errs = append(errs, err)
@@ -122,21 +100,10 @@ type NonCachingLoader struct {
 // NewNonCachingLoader returns a NonCachingLoader using the Go template files
 // in the file system.
 func NewNonCachingLoader(fsys fs.FS, funcs template.FuncMap) (Loader, []error) {
-	// find all the Go template files on the file system
-	layouts, partials, pages, fragments, err := findGoHtmlTemplates(fsys)
-	if err != nil {
-		return nil, []error{err}
-	}
-	var files []string
-	for _, list := range [][]string{layouts, partials, pages, fragments} {
-		files = append(files, list...)
-	}
-
-	l := &NonCachingLoader{
+	return &NonCachingLoader{
 		fsys:  fsys,
 		funcs: funcs,
-	}
-	return l, nil
+	}, nil
 }
 
 // Load loads a template from the file system and parses it, returning any errors.
@@ -145,7 +112,11 @@ func (l *NonCachingLoader) Load(name string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	return template.New(name).Funcs(l.funcs).ParseFS(l.fsys, files...)
+	fileName := name + ".gohtml"
+	// we must put the template file last in the list of files to load so that it overrides
+	// any other templates that share the same "define xxxxx" entries (eg, "content").
+	fileList := append(files, fileName)
+	return template.New(name).Funcs(l.funcs).ParseFS(l.fsys, fileList...)
 }
 
 // Execute uses Load() to fetch a template and execute it, returning a buffer or an error.

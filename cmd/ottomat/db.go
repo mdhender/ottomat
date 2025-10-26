@@ -25,13 +25,13 @@ var (
 	updateClanID   int
 )
 
-var dbCmd = &cobra.Command{
+var cmdDb = &cobra.Command{
 	Use:   "db",
 	Short: "Database management commands",
 	Long:  `Manage the OttoMat database including migrations and seeding.`,
 }
 
-var dbInitCmd = &cobra.Command{
+var cmdDbInit = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize the database",
 	Long:  `Create the database file if it doesn't exist.`,
@@ -49,7 +49,7 @@ var dbInitCmd = &cobra.Command{
 	},
 }
 
-var dbMigrateCmd = &cobra.Command{
+var cmdDbMigrate = &cobra.Command{
 	Use:   "migrate",
 	Short: "Run database migrations",
 	Long:  `Apply schema migrations to the database.`,
@@ -69,7 +69,7 @@ var dbMigrateCmd = &cobra.Command{
 	},
 }
 
-var dbSeedCmd = &cobra.Command{
+var cmdDbSeed = &cobra.Command{
 	Use:   "seed",
 	Short: "Seed the database with initial data",
 	Long:  `Create default admin user and other initial data.`,
@@ -125,13 +125,13 @@ var dbSeedCmd = &cobra.Command{
 	},
 }
 
-var dbCreateCmd = &cobra.Command{
+var cmdDbCreate = &cobra.Command{
 	Use:   "create",
 	Short: "Create database records",
 	Long:  `Create new database records.`,
 }
 
-var dbCreateUserCmd = &cobra.Command{
+var cmdDbCreateUser = &cobra.Command{
 	Use:   "user <username>",
 	Short: "Create a new user",
 	Long:  `Create a new user with specified username and optional password, role, and clan ID.`,
@@ -200,13 +200,13 @@ var dbCreateUserCmd = &cobra.Command{
 	},
 }
 
-var dbUpdateCmd = &cobra.Command{
+var cmdDbUpdate = &cobra.Command{
 	Use:   "update",
 	Short: "Update database records",
 	Long:  `Update existing database records.`,
 }
 
-var dbUpdateUserCmd = &cobra.Command{
+var cmdDbUpdateUser = &cobra.Command{
 	Use:   "user <username>",
 	Short: "Update user record",
 	Long:  `Update fields for a specific user. At least one update flag must be provided.`,
@@ -281,25 +281,4 @@ var dbUpdateUserCmd = &cobra.Command{
 		log.Printf("updated user '%s': %v", username, updates)
 		return nil
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(dbCmd)
-	dbCmd.AddCommand(dbInitCmd)
-	dbCmd.AddCommand(dbMigrateCmd)
-	dbCmd.AddCommand(dbSeedCmd)
-	dbCmd.AddCommand(dbCreateCmd)
-	dbCmd.AddCommand(dbUpdateCmd)
-	dbCreateCmd.AddCommand(dbCreateUserCmd)
-	dbUpdateCmd.AddCommand(dbUpdateUserCmd)
-
-	dbCmd.PersistentFlags().StringVar(&dbPath, "db", "ottomat.db", "path to the database file")
-	dbSeedCmd.Flags().StringVar(&adminUsername, "username", "admin", "username for admin user")
-	dbSeedCmd.Flags().StringVar(&adminPassword, "password", "", "password for admin user (generates random if not provided)")
-	dbCreateUserCmd.Flags().StringVar(&createPassword, "password", "", "password for user (generates random if not provided)")
-	dbCreateUserCmd.Flags().StringVar(&createRole, "role", "guest", "role for user (guest, chief, admin)")
-	dbCreateUserCmd.Flags().IntVar(&createClanID, "clan-id", 0, "clan ID for user")
-	dbUpdateUserCmd.Flags().StringVar(&updatePassword, "password", "", "new password for user (generates random if not provided)")
-	dbUpdateUserCmd.Flags().StringVar(&updateRole, "role", "", "new role for user (guest, chief, admin)")
-	dbUpdateUserCmd.Flags().IntVar(&updateClanID, "clan-id", 0, "new clan ID for user (0 to clear)")
 }

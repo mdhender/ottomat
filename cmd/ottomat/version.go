@@ -11,7 +11,7 @@ var (
 	buildInfo bool = false
 )
 
-var versionCmd = &cobra.Command{
+var cmdVersion = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Long:  `Display the current version of OttoMat.`,
@@ -22,9 +22,4 @@ var versionCmd = &cobra.Command{
 			fmt.Println(ottomat.Version().Core())
 		}
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(&buildInfo, "build-info", false, "show build information")
 }

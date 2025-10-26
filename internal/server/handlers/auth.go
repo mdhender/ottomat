@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -15,44 +16,50 @@ import (
 )
 
 type LoginPageData struct {
-	Title        string
-	Version      string
-	PasswordType string
+	Title         string
+	Version       string
+	PasswordType  string
+	AvoidAutofill bool
 }
 
-func LoginPage(view views.Renderer, visiblePasswords bool) http.HandlerFunc {
+func LoginPage(view views.Loader, avoidAutofill, visiblePasswords bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		renderer, entry := view.Page, "login"
-		if r.Header.Get("HX-Request") == "true" {
-			// todo: this is unexpected?
-			renderer, entry = view.Frag, "login"
-		}
-
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
 		passwordType := "password"
 		if visiblePasswords {
 			passwordType = "text"
 		}
 		data := LoginPageData{
-			Title:        "Login",
-			Version:      ottomat.Version().String(),
-			PasswordType: passwordType,
+			Title:         "Login",
+			Version:       ottomat.Version().String(),
+			PasswordType:  passwordType,
+			AvoidAutofill: avoidAutofill,
 		}
 
-		w.Header().Set("Content-Type", "text/html")
-		if err := renderer(w, entry, data); err != nil {
-			log.Printf("%s %s: render %v\n", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		var name string
+		if r.Header.Get("HX-Request") == "true" {
+			// should not be supported?
+			http.Error(w, fmt.Sprintf("<p>%s %s: view error: fragment not implemented</p>", r.Method, r.URL.Path), http.StatusInternalServerError)
+			return
+		} else {
+			name = "pages/login"
+		}
+		buf, err := view.Execute(name, data)
+		if err != nil {
+			log.Printf("%s %s: %s: data %+v\n", r.Method, r.URL.Path, name, data)
+			log.Printf("%s %s: %s: render %v\n", r.Method, r.URL.Path, name, err)
+			http.Error(w, fmt.Sprintf("%s %s: %s: view error: %v", r.Method, r.URL.Path, name, err), http.StatusInternalServerError)
 			return
 		}
-		//w.Header().Set("Content-Type", "text/html")
-		//if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
-		//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		//}
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf.Bytes())
 	}
 }
 
 func Login(client *ent.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
@@ -104,6 +111,7 @@ func Login(client *ent.Client) http.HandlerFunc {
 
 func Logout(client *ent.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
 		cookie, err := r.Cookie("session_token")
 		if err == nil {
 			ctx := r.Context()
