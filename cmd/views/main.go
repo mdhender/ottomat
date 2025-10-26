@@ -47,12 +47,14 @@ func main() {
 	//log.Println("[views] prod mode: Caching HTMX server (cache views)")
 	cachingPublicFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: ottomat.Embedded})
 	cachingViewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Embedded})
-	cachingRenderer := tpl.NewCaching(cachingViewsFS, funcs())
-	err = cachingRenderer.Preload()
-	if err != nil {
-		log.Fatalf("cachingServer: %v\n", err)
+	cachingLoader, errs := tpl.NewCachingLoader(cachingViewsFS, funcs())
+	if errs != nil {
+		for _, err := range errs {
+			log.Printf("cachingLoader: %v\n", err)
+		}
+		log.Fatalf("cachingLoader: failed\n")
 	}
-	cachingServer, err := newServer(":8181", cachingPublicFS, cachingRenderer)
+	cachingServer, err := newServerWithLoader(":8181", cachingPublicFS, cachingLoader)
 	if err != nil {
 		log.Fatalf("cachingServer: %v\n", err)
 	}
@@ -116,6 +118,41 @@ func newServer(addr string, pubFS fs.FS, render tpl.Renderer) (*server, error) {
 		if err := renderer(w, entry, data); err != nil {
 			handleErr(w, err)
 		}
+	})
+
+	s.Handler = mux
+
+	return s, nil
+}
+
+func newServerWithLoader(addr string, pubFS fs.FS, loader tpl.Loader) (*server, error) {
+	s := &server{}
+	s.Addr = addr
+
+	mux := http.NewServeMux()
+
+	// static server
+	mux.Handle("GET /", http.FileServer(http.FS(pubFS)))
+
+	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query().Get("q")
+		data := PageData{Q: q, Users: filterUsers(sampleUsers(), q), Version: ottomat.Version().String()}
+
+		var name string
+		if r.Header.Get("HX-Request") == "true" {
+			name = "frags/users/table_rows"
+		} else {
+			name = "pages/users/index"
+		}
+		buf, err := loader.Execute(name, data)
+		if err != nil {
+			log.Printf("%s %s: %s: %v\n", r.Method, r.URL.Path, name, err)
+			http.Error(w, "<p>TEMPLATE ERROR</p>", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf.Bytes())
 	})
 
 	s.Handler = mux
