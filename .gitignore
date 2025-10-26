@@ -11,3 +11,6 @@
 
 dist/
 tmp/
+
+elements_llms.md
+public/js/elements-1.0.18.min.js

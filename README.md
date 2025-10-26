@@ -295,6 +295,12 @@ make new-database
 make clean
 ```
 
+## Tailwind
+
+```bash
+~/bin/tailwindcss -i ./public/css/tailwind.css -o ./public/css/ottomat.css --watch
+```
+
 ## Security Features
 
 - **Password Hashing**: bcrypt with default cost
