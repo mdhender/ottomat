@@ -56,7 +56,7 @@ func (r *NonCachingRenderer) Preload() error {
 	return nil
 }
 
-// findGoHtmlTemplates recursively walks an fs.FS and returns all .gohtml files.
+// findGoHtmlTemplates recursively walks a filesystem and returns all .gohtml files.
 func findGoHtmlTemplates(fsys fs.FS) (layouts, partials, pages, fragments []string, err error) {
 	find := func(fsys fs.FS, root string) (matches []string, err error) {
 		err = fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {

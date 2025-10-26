@@ -33,13 +33,24 @@ func main() {
 
 	//log.Println("[views] dev mode: NonCaching HTMX server (reparse each request)")
 	nonCachingPublicFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: ottomat.Live})
-	nonCachingViewFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Live})
-	nonCachingRenderer := tpl.NewNonCaching(nonCachingViewFS, funcs())
+	nonCachingViewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Live})
+	nonCachingRenderer := tpl.NewNonCaching(nonCachingViewsFS, funcs())
 	err := nonCachingRenderer.Preload()
 	if err != nil {
 		log.Fatalf("nonCachingServer: %v\n", err)
 	}
-	nonCachingServer, err := newServer(":8080", nonCachingPublicFS, nonCachingRenderer)
+	nonCachingLoader, errs := tpl.NewNonCachingLoader(nonCachingViewsFS, funcs())
+	if errs != nil {
+		for _, err := range errs {
+			log.Printf("nonCachingLoader: %v\n", err)
+		}
+		log.Fatalf("nonCachingLoader: failed\n")
+	} else if buf, err := nonCachingLoader.Execute("pages/users/index", nil); err != nil {
+		log.Fatalf("nonCachingLoader: %v\n", err)
+	} else {
+		log.Printf("nonCachingLoader: %q\n", buf.Bytes())
+	}
+	nonCachingServer, err := newServerWithLoader(":8080", nonCachingPublicFS, nonCachingLoader)
 	if err != nil {
 		log.Fatalf("nonCachingServer: %v\n", err)
 	}
