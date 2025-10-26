@@ -38,8 +38,8 @@ func New(addr string, client *ent.Client, devMode bool, avoidAutofill, visiblePa
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /login", handlers.LoginPage(s.viewLoader, avoidAutofill, visiblePasswords))
-	mux.HandleFunc("POST /login", handlers.Login(client))
-	mux.HandleFunc("POST /logout", handlers.Logout(client))
+	mux.HandleFunc("POST /login", handlers.PostLogin(client))
+	mux.HandleFunc("POST /logout", handlers.PostLogout(client))
 
 	mux.Handle("GET /admin", sessionMW(authMW(handlers.AdminDashboard(client))))
 	mux.Handle("POST /admin/users", sessionMW(authMW(handlers.CreateUser(client))))

@@ -9,6 +9,10 @@ import (
 	"github.com/mdhender/ottomat/ent/session"
 )
 
+const (
+	sessionCookieName = "ottomat_session"
+)
+
 type contextKey string
 
 const UserContextKey contextKey = "user"
@@ -16,7 +20,7 @@ const UserContextKey contextKey = "user"
 func Session(client *ent.Client) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie("session_token")
+			cookie, err := r.Cookie(sessionCookieName)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return

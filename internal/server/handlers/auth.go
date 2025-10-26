@@ -15,6 +15,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	sessionCookieName = "ottomat_session"
+)
+
 type LoginPageData struct {
 	Title         string
 	Version       string
@@ -39,9 +43,11 @@ func LoginPage(view views.Loader, avoidAutofill, visiblePasswords bool) http.Han
 		var name string
 		if r.Header.Get("HX-Request") == "true" {
 			// should not be supported?
-			http.Error(w, fmt.Sprintf("<p>%s %s: view error: fragment not implemented</p>", r.Method, r.URL.Path), http.StatusInternalServerError)
+			log.Printf("%s %s: fragment true\n", r.Method, r.URL.Path)
+			http.Error(w, fmt.Sprintf("%s %s: view error: fragment not implemented", r.Method, r.URL.Path), http.StatusInternalServerError)
 			return
 		} else {
+			log.Printf("%s %s: page true\n", r.Method, r.URL.Path)
 			name = "pages/login"
 		}
 		buf, err := view.Execute(name, data)
@@ -57,11 +63,12 @@ func LoginPage(view views.Loader, avoidAutofill, visiblePasswords bool) http.Han
 	}
 }
 
-func Login(client *ent.Client) http.HandlerFunc {
+func PostLogin(client *ent.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
 		username := r.FormValue("username")
 		password := r.FormValue("password")
+		log.Printf("%s %s: username %q: password %q\n", r.Method, r.URL.Path, username, password)
 
 		ctx := r.Context()
 		u, err := client.User.
@@ -69,17 +76,20 @@ func Login(client *ent.Client) http.HandlerFunc {
 			Where(user.Username(username)).
 			Only(ctx)
 		if err != nil {
+			log.Printf("%s %s: query %v\n", r.Method, r.URL.Path, err)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
 		if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
+			log.Printf("%s %s: bcrypt %v\n", r.Method, r.URL.Path, err)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
 		token, err := auth.GenerateSessionToken()
 		if err != nil {
+			log.Printf("%s %s: genToken %v\n", r.Method, r.URL.Path, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -91,12 +101,13 @@ func Login(client *ent.Client) http.HandlerFunc {
 			SetUser(u).
 			Save(ctx)
 		if err != nil {
+			log.Printf("%s %s: setToken %v\n", r.Method, r.URL.Path, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     "session_token",
+			Name:     sessionCookieName,
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(24 * time.Hour),
@@ -105,14 +116,18 @@ func Login(client *ent.Client) http.HandlerFunc {
 			SameSite: http.SameSiteLaxMode,
 		})
 
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		if u.Role == user.RoleAdmin {
+			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			return
+		}
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
 
-func Logout(client *ent.Client) http.HandlerFunc {
+func PostLogout(client *ent.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
-		cookie, err := r.Cookie("session_token")
+		cookie, err := r.Cookie(sessionCookieName)
 		if err == nil {
 			ctx := r.Context()
 			client.Session.
@@ -122,7 +137,7 @@ func Logout(client *ent.Client) http.HandlerFunc {
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     "session_token",
+			Name:     sessionCookieName,
 			Value:    "",
 			Path:     "/",
 			Expires:  time.Now().Add(-1 * time.Hour),

@@ -40,13 +40,16 @@ func Index(assets fs.FS, client *ent.Client) http.HandlerFunc {
 		if asset == "/" {
 			u, ok := middleware.GetUser(r.Context())
 			if !ok { // no session, so redirect to login
+				log.Printf("%s %s: index: redirect /login\n", r.Method, r.URL.Path)
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			} else if u.Role == user.RoleAdmin { // redirect to admin dashboard
+				log.Printf("%s %s: index: redirect /admin\n", r.Method, r.URL.Path)
 				http.Redirect(w, r, "/admin", http.StatusSeeOther)
 				return
 			}
 			// redirect to user dashboard
+			log.Printf("%s %s: index: redirect /dashboard\n", r.Method, r.URL.Path)
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
@@ -55,6 +58,7 @@ func Index(assets fs.FS, client *ent.Client) http.HandlerFunc {
 
 		// normalize and guard the path.
 		asset = strings.TrimPrefix(asset, "/")
+		log.Printf("%s %s: index: asset %q\n", r.Method, r.URL.Path, asset)
 		if asset == "." || strings.HasPrefix(asset, "..") {
 			http.NotFound(w, r)
 			return
