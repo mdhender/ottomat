@@ -1,0 +1,18 @@
+{{- define "layouts/base" -}}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{block "title" .}}OttoMat Demo{{end}}</title>
+  <script src="/js/htmx-2.0.3.min.js"></script>
+  <script src="/js/alpinejs-3.14.8.min.js" defer></script>
+  <link rel="stylesheet" href="/css/site.css"></head>
+</head>
+<body>
+  <div id="flash-area">{{template "flash" .}}</div>
+  <main>
+    {{block "content" .}}{{end}}
+  </main>
+</body>
+</html>
+{{- end -}}

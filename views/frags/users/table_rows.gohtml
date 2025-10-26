@@ -1,0 +1,11 @@
+{{define "frags/users/table_rows"}}
+{{- if .Users -}}
+    {{- range .Users }}
+        {{template "frags/users/table_row" .}}
+    {{- end }}
+{{- else -}}
+    <tr>
+        <td colspan="2">No users</td>
+    </tr>
+{{- end -}}
+{{end}}

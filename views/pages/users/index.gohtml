@@ -1,0 +1,15 @@
+{{define "title" -}}Users{{- end}}
+
+{{define "content" -}}
+<h1>Users</h1>
+<form hx-get="/users" hx-target="#user-rows" hx-push-url="true">
+  <input name="q" value="{{.Q}}" placeholder="Search users">
+</form>
+<table border="1" cellpadding="4" cellspacing="0">
+  <tbody id="user-rows">{{template "frags/users/table_rows" .}}</tbody>
+</table>
+{{- end}}
+
+{{define "pages/users/index" -}}
+{{template "layouts/base" .}}
+{{- end}}

@@ -7,7 +7,6 @@ import (
 	"github.com/mdhender/ottomat"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/server/middleware"
-	"github.com/mdhender/ottomat/internal/server/templates"
 )
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -53,9 +52,19 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
             </form>
         </div>
     </div>
-    %s
+    <footer class="bg-gray-800 text-gray-400 text-sm py-4 mt-8 border-t border-gray-700">
+        <div class="container mx-auto px-8 flex justify-between items-center">
+            <div>
+                Version %s
+            </div>
+            <div class="space-x-4">
+                <a href="https://github.com/mdhender/ottomat" target="_blank" class="hover:text-white transition">GitHub</a>
+                <a href="https://discord.gg/8v2pWUs2Pg" target="_blank" class="hover:text-white transition">Discord</a>
+            </div>
+        </div>
+    </footer>
 </body>
-</html>`, u.Username, clanID, templates.Footer(ottomat.Version().String()))
+</html>`, u.Username, clanID, ottomat.Version().String())
 
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, html)

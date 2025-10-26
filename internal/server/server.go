@@ -11,10 +11,11 @@ import (
 func New(client *ent.Client, devMode bool, visiblePasswords bool) http.Handler {
 	mux := http.NewServeMux()
 
+	tmplLoader := handlers.NewTemplateLoader(devMode)
 	sessionMW := middleware.Session(client)
 	authMW := middleware.Auth()
 
-	mux.HandleFunc("GET /login", handlers.LoginPage(devMode, visiblePasswords))
+	mux.HandleFunc("GET /login", handlers.LoginPage(tmplLoader, visiblePasswords))
 	mux.HandleFunc("POST /login", handlers.Login(client))
 	mux.HandleFunc("POST /logout", handlers.Logout(client))
 

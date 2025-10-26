@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -14,54 +13,35 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func LoginPage(devMode, visiblePasswords bool) http.HandlerFunc {
+type LoginPageData struct {
+	Title        string
+	Version      string
+	PasswordType string
+}
+
+func LoginPage(tmplLoader *templates.Loader, visiblePasswords bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		autocompleteAttrs := ""
 		passwordType := "password"
-		if devMode {
-			autocompleteAttrs = `autocomplete="off" data-1p-ignore data-lpignore="true"`
-			if visiblePasswords {
-				passwordType = "text"
-			}
+		if visiblePasswords {
+			passwordType = "text"
 		}
 
-		html := fmt.Sprintf(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - OttoMat</title>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col">
-    <div class="flex-grow flex items-center justify-center">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-            <h1 class="text-2xl font-bold mb-6 text-center">OttoMat Login</h1>
-            <form hx-post="/login" hx-target="body" hx-swap="outerHTML" %s>
-                <div class="mb-4">
-                    <label for="username" class="block text-sm font-medium mb-2">Username</label>
-                    <input type="text" id="username" name="username" required %s
-                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
-                </div>
-                <div class="mb-6">
-                    <label for="password" class="block text-sm font-medium mb-2">Password</label>
-                    <input type="%s" id="password" name="password" required autocomplete="current-password" %s
-                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500">
-                </div>
-                <button type="submit" 
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">
-                    Login
-                </button>
-            </form>
-        </div>
-    </div>
-    %s
-</body>
-</html>`, autocompleteAttrs, autocompleteAttrs, autocompleteAttrs, passwordType, templates.Footer(ottomat.Version().String()))
+		data := LoginPageData{
+			Title:        "Login",
+			Version:      ottomat.Version().String(),
+			PasswordType: passwordType,
+		}
+
+		tmpl, err := tmplLoader.Load()
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, html)
+		if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 	}
 }
 
