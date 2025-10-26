@@ -1,21 +1,35 @@
 package server
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/mdhender/ottomat/ent"
 	"github.com/mdhender/ottomat/internal/server/handlers"
 	"github.com/mdhender/ottomat/internal/server/middleware"
+	"github.com/mdhender/ottomat/internal/views"
 )
 
-func New(client *ent.Client, devMode bool, visiblePasswords bool) http.Handler {
-	mux := http.NewServeMux()
+type Server struct {
+	http.Server
+	viewRenderer views.Renderer
+}
 
-	tmplLoader := handlers.NewTemplateLoader(devMode)
+func New(addr string, client *ent.Client, devMode bool, visiblePasswords bool, assetsFS, viewsFS fs.FS) *Server {
+	s := &Server{}
+	s.Addr = addr
+
+	if devMode {
+		s.viewRenderer = views.NewNonCaching(viewsFS, nil)
+	} else {
+		s.viewRenderer = views.NewCaching(viewsFS, nil)
+	}
 	sessionMW := middleware.Session(client)
 	authMW := middleware.Auth()
 
-	mux.HandleFunc("GET /login", handlers.LoginPage(tmplLoader, visiblePasswords))
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /login", handlers.LoginPage(s.viewRenderer, visiblePasswords))
 	mux.HandleFunc("POST /login", handlers.Login(client))
 	mux.HandleFunc("POST /logout", handlers.Logout(client))
 
@@ -24,11 +38,12 @@ func New(client *ent.Client, devMode bool, visiblePasswords bool) http.Handler {
 	mux.Handle("POST /admin/users", sessionMW(authMW(http.HandlerFunc(handlers.CreateUser(client)))))
 	mux.Handle("DELETE /admin/users/{id}", sessionMW(authMW(http.HandlerFunc(handlers.DeleteUser(client)))))
 
+	s.Handler = mux
+
 	// Wrap with logging middleware if in development mode
-	var handler http.Handler = mux
 	if devMode {
-		handler = middleware.Logging()(handler)
+		s.Handler = middleware.Logging()(s.Handler)
 	}
 
-	return handler
+	return s
 }

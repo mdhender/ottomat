@@ -1,7 +1,7 @@
 package handlers
 
-import "github.com/mdhender/ottomat/internal/server/templates"
-
-func NewTemplateLoader(devMode bool) *templates.Loader {
-	return templates.NewLoader(devMode)
-}
+//import "github.com/mdhender/ottomat/internal/server/views"
+//
+//func NewTemplateLoader(devMode bool) *views.Loader {
+//	return templates.NewLoader(devMode)
+//}

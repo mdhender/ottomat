@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/mdhender/ottomat/ent/session"
 	"github.com/mdhender/ottomat/ent/user"
 	"github.com/mdhender/ottomat/internal/auth"
-	"github.com/mdhender/ottomat/internal/server/templates"
+	"github.com/mdhender/ottomat/internal/views"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,29 +20,34 @@ type LoginPageData struct {
 	PasswordType string
 }
 
-func LoginPage(tmplLoader *templates.Loader, visiblePasswords bool) http.HandlerFunc {
+func LoginPage(view views.Renderer, visiblePasswords bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		renderer, entry := view.Page, "login"
+		if r.Header.Get("HX-Request") == "true" {
+			// todo: this is unexpected?
+			renderer, entry = view.Frag, "login"
+		}
+
 		passwordType := "password"
 		if visiblePasswords {
 			passwordType = "text"
 		}
-
 		data := LoginPageData{
 			Title:        "Login",
 			Version:      ottomat.Version().String(),
 			PasswordType: passwordType,
 		}
 
-		tmpl, err := tmplLoader.Load()
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/html")
+		if err := renderer(w, entry, data); err != nil {
+			log.Printf("%s %s: render %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-
-		w.Header().Set("Content-Type", "text/html")
-		if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		//w.Header().Set("Content-Type", "text/html")
+		//if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
+		//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		//}
 	}
 }
 

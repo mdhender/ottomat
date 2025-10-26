@@ -14,7 +14,7 @@ import (
 	"syscall"
 
 	"github.com/mdhender/ottomat"
-	tpl "github.com/mdhender/ottomat/internal/tpl"
+	tpl "github.com/mdhender/ottomat/internal/views"
 )
 
 type User struct {
@@ -23,8 +23,9 @@ type User struct {
 }
 
 type PageData struct {
-	Q     string
-	Users []User
+	Q       string
+	Users   []User
+	Version string
 }
 
 func main() {
@@ -46,11 +47,7 @@ func main() {
 	//log.Println("[views] prod mode: Caching HTMX server (cache views)")
 	cachingPublicFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: ottomat.Embedded})
 	cachingViewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: ottomat.Embedded})
-	cachingCfg := tpl.Config{
-		FS:    cachingViewsFS,
-		Funcs: funcs(),
-	}
-	cachingRenderer := tpl.NewCaching(cachingCfg)
+	cachingRenderer := tpl.NewCaching(cachingViewsFS, funcs())
 	err = cachingRenderer.Preload()
 	if err != nil {
 		log.Fatalf("cachingServer: %v\n", err)
@@ -110,7 +107,7 @@ func newServer(addr string, pubFS fs.FS, render tpl.Renderer) (*server, error) {
 
 	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query().Get("q")
-		data := PageData{Q: q, Users: filterUsers(sampleUsers(), q)}
+		data := PageData{Q: q, Users: filterUsers(sampleUsers(), q), Version: ottomat.Version().String()}
 
 		renderer, entry := render.Page, "users/index"
 		if r.Header.Get("HX-Request") == "true" {

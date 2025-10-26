@@ -1,4 +1,4 @@
-package tpl
+package views
 
 import (
 	"html/template"
@@ -10,7 +10,6 @@ import (
 )
 
 type CachingRenderer struct {
-	cfg     Config
 	mu      sync.RWMutex
 	viewsFS fs.FS
 	funcs   template.FuncMap
@@ -18,8 +17,8 @@ type CachingRenderer struct {
 	cache   map[string]*template.Template
 }
 
-func NewCaching(cfg Config) *CachingRenderer {
-	layouts, partials, pages, fragments, err := findGoHtmlTemplates(cfg.FS)
+func NewCaching(viewsFS fs.FS, funcs template.FuncMap) *CachingRenderer {
+	layouts, partials, pages, fragments, err := findGoHtmlTemplates(viewsFS)
 	if err != nil {
 		return nil
 	}
@@ -28,9 +27,9 @@ func NewCaching(cfg Config) *CachingRenderer {
 		files = append(files, list...)
 	}
 	return &CachingRenderer{
-		cfg:     cfg,
-		viewsFS: cfg.FS,
+		viewsFS: viewsFS,
 		files:   files,
+		funcs:   funcs,
 		cache:   make(map[string]*template.Template),
 	}
 }

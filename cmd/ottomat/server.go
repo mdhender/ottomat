@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/mdhender/ottomat"
 	"github.com/mdhender/ottomat/internal/database"
 	"github.com/mdhender/ottomat/internal/server"
 	"github.com/spf13/cobra"
@@ -48,16 +48,19 @@ var serverCmd = &cobra.Command{
 		}
 		defer client.Close()
 
-		srv := server.New(client, devMode, visiblePasswords)
-		httpServer := &http.Server{
-			Addr:    ":" + serverPort,
-			Handler: srv,
+		fsMode := ottomat.Embedded
+		if devMode {
+			fsMode = ottomat.Live
 		}
+		assetsFS := ottomat.GetPublicFS(ottomat.FSConfig{Mode: fsMode})
+		viewsFS := ottomat.GetViewsFS(ottomat.FSConfig{Mode: fsMode})
+
+		srv := server.New(":"+serverPort, client, devMode, visiblePasswords, assetsFS, viewsFS)
 
 		serverErrors := make(chan error, 1)
 		go func() {
 			log.Printf("server listening on port %s\n", serverPort)
-			serverErrors <- httpServer.ListenAndServe()
+			serverErrors <- srv.ListenAndServe()
 		}()
 
 		shutdown := make(chan os.Signal, 1)
@@ -80,9 +83,9 @@ var serverCmd = &cobra.Command{
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			if err := httpServer.Shutdown(ctx); err != nil {
+			if err := srv.Shutdown(ctx); err != nil {
 				log.Printf("error during shutdown: %v\n", err)
-				return httpServer.Close()
+				return srv.Close()
 			}
 
 			log.Println("server stopped gracefully")
