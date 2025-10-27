@@ -1,0 +1,14 @@
+{{define "frags/admin/users_table_row"}}
+<tr class="border-b border-gray-700">
+    <td class="py-3 px-4">{{.ID}}</td>
+    <td class="py-3 px-4">{{.Username}}</td>
+    <td class="py-3 px-4">{{.Role}}</td>
+    <td class="py-3 px-4">{{.ClanID}}</td>
+    <td class="py-3 px-4">
+        <button hx-delete="/admin/users/{{.ID}}" hx-confirm="Are you sure?" hx-target="closest tr" hx-swap="outerHTML"
+            class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded transition text-sm">
+            Delete
+        </button>
+    </td>
+</tr>
+{{end}}

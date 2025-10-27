@@ -41,7 +41,7 @@ func New(addr string, client *ent.Client, devMode bool, avoidAutofill, visiblePa
 	mux.HandleFunc("POST /login", handlers.PostLogin(client))
 	mux.HandleFunc("POST /logout", handlers.PostLogout(client))
 
-	mux.Handle("GET /admin", sessionMW(authMW(handlers.AdminDashboard(client))))
+	mux.Handle("GET /admin", sessionMW(authMW(handlers.AdminDashboard(client, s.viewLoader))))
 	mux.Handle("POST /admin/users", sessionMW(authMW(handlers.CreateUser(client))))
 	mux.Handle("DELETE /admin/users/{id}", sessionMW(authMW(handlers.DeleteUser(client))))
 	mux.Handle("GET /dashboard", sessionMW(authMW(http.HandlerFunc(handlers.Dashboard))))
