@@ -116,11 +116,18 @@ func PostLogin(client *ent.Client) http.HandlerFunc {
 			SameSite: http.SameSiteLaxMode,
 		})
 
+		urlDashboard := "/dashboard" // assume user
 		if u.Role == user.RoleAdmin {
-			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			urlDashboard = "/admin"
+		}
+		if r.Header.Get("HX-Request") == "true" {
+			// HTMX-specific header for full page redirect
+			w.Header().Add("HX-Redirect", urlDashboard) // redirect to dashboard
+			w.WriteHeader(http.StatusNoContent)         // no content to swap
 			return
 		}
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		// traditional soft redirect
+		http.Redirect(w, r, urlDashboard, http.StatusSeeOther)
 	}
 }
 
@@ -146,6 +153,13 @@ func PostLogout(client *ent.Client) http.HandlerFunc {
 			SameSite: http.SameSiteLaxMode,
 		})
 
+		if r.Header.Get("HX-Request") == "true" {
+			// HTMX-specific header for full page redirect
+			w.Header().Add("HX-Redirect", "/login") // redirect to login page
+			w.WriteHeader(http.StatusNoContent)     // no content to swap
+			return
+		}
+		// traditional soft redirect
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 }
