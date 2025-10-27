@@ -1,0 +1,35 @@
+[Unit]
+Description=OttoMat server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ottopb
+Group=ottopb
+WorkingDirectory=/var/www/dev/ottomat/public
+ExecStart=/var/www/dev/ottomat/bin/ottomat server --db /var/www/dev/ottomat/data/ottomat.db
+Restart=on-failure
+RestartSec=13
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ottomat
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/dev/ottomat/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

@@ -15,6 +15,12 @@ build: ## Build the ottomat binary
 	@go build -o $(BINARY) ./cmd/ottomat
 	@echo "Build complete: $(BINARY)"
 
+build-linux: ## Build the ottomat binary for linux
+	@echo "Building ottomat for linux..."
+	$(eval VERSION := $(shell go run ./cmd/ottomat version | head -n1))
+	@GOOS=linux GOARCH=amd64 go build -o dist/linux/ottomat-$(VERSION) ./cmd/ottomat
+	@echo "Build complete: dist/linux/ottomat-$(VERSION)"
+
 new-database: build ## Initialize a new test database with default admin
 	@./tools/init-new-database.sh $(DB_PATH) $(ADMIN_PASSWORD)
 
